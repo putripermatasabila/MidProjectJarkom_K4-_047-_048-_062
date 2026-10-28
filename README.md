@@ -7,7 +7,7 @@
 | Nama                 | NRP        |
 | -------------------- | ---------- |
 | Putri Permata Sabila | 5027251047 |
-
+| M.Faris Roisul Azhar | 5027251048 |
 ## Daftar Isi
 
 1. [Topologi dan Pengalamatan IP](#1-topologi-dan-pengalamatan-ip)
