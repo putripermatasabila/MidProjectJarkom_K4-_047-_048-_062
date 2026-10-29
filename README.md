@@ -52,7 +52,7 @@ Pengalamatan IP menggunakan skema _Variable Length Subnet Mask_ (VLSM) pada blok
 | L4   | R-PUSAT  | `10.32.241.45` | R-TIMUR     | `10.32.241.46` | `10.32.241.44/30` |
 | L5   | R-PUSAT  | `10.32.241.49` | R-BARAT     | `10.32.241.50` | `10.32.241.48/30` |
 | L6   | R-UTARA  | `10.32.241.53` | R-PELABUHAN | `10.32.241.54` | `10.32.241.52/30` |
-| ISP  | R-PUSAT  | `203.0.113.14` | R-ISP       | `203.0.113.13` | `203.0.113.12/30` |
+| ISP  | R-PUSAT  | `203.0.113.17` | R-ISP       | `203.0.113.18` | `203.0.113.16/30` |
 
 **Alasan Pemilihan Skema VLSM:**
 
@@ -240,7 +240,7 @@ R-UTARA# write memory
 | PJU Pintar Selatan         | `10.32.240.128` | `255.255.255.128` | `10.32.241.42` (R-SELATAN)   |
 | Sensor Banjir Timur        | `10.32.232.0`   | `255.255.252.0`   | `10.32.241.46` (R-TIMUR)     |
 | Puskesmas dan Sekolah      | `10.32.238.0`   | `255.255.255.0`   | `10.32.241.50` (R-BARAT)     |
-| Default route (internet)   | `0.0.0.0`       | `0.0.0.0`         | `203.0.113.13` (R-ISP)       |
+| Default route (internet)   | `0.0.0.0`       | `0.0.0.0`         | `203.0.113.18` (R-ISP)       |
 
 **Konfigurasi Static Route Lengkap pada R-PUSAT:**
 
@@ -260,7 +260,7 @@ R-PUSAT(config)# ip route 10.32.241.52 255.255.255.252 10.32.241.38
 R-PUSAT(config)# ip route 10.32.240.128 255.255.255.128 10.32.241.42
 R-PUSAT(config)# ip route 10.32.232.0 255.255.252.0 10.32.241.46
 R-PUSAT(config)# ip route 10.32.238.0 255.255.255.0 10.32.241.50
-R-PUSAT(config)# ip route 0.0.0.0 0.0.0.0 203.0.113.13
+ip route 0.0.0.0 0.0.0.0 203.0.113.18
 R-PUSAT(config)# exit
 R-PUSAT# write memory
 ```
@@ -371,3 +371,122 @@ C:\> tracert 10.32.160.2
 **Output**
 
 ![Output Tracert F](assets/tracert-f.png)
+
+---
+
+## Laporan Resmi (Tahap 2 - DHCP, NAT, dan Tunnel GRE)
+
+### 4. Konfigurasi Layanan DHCP
+
+Sesuai spesifikasi, seluruh interface router dan server menggunakan pengalamatan statis, sedangkan perangkat pengguna di setiap LAN memperoleh konfigurasi IP, subnet mask, default gateway, dan DNS server (`10.32.239.2`) secara dinamis.
+
+#### 4.1 DHCP Relay untuk Subnet CCTV Kota
+Khusus subnet CCTV Kota (`10.32.96.0/19`), alamat IP tidak dilayani oleh router `R-DC`, melainkan dialokasikan oleh server DHCP terpusat di LAN Server dan Storage DC (`Server-DC`, IP `10.32.239.2`).
+
+1. **Konfigurasi IP Helper di R-DC:**
+   ```
+   R-DC(config)# interface GigabitEthernet0/1
+   R-DC(config-if)# ip helper-address 10.32.239.2
+   R-DC(config-if)# exit
+   ```
+2. **Konfigurasi DHCP Pool pada Server-DC:**
+   - Pool Name: `serverPool`
+   - Network Address: `10.32.96.0`
+   - Subnet Mask: `255.255.224.0`
+   - Default Gateway: `10.32.96.1`
+   - DNS Server: `10.32.239.2`
+   - Start IP: `10.32.96.2`
+
+#### 4.2 Pool DHCP pada Router Wilayah
+Pada masing-masing router wilayah lain, pool DHCP diaktifkan untuk melayani LAN pengguna:
+
+* **R-UTARA**:
+  * `POOL-WIFI-UTARA`: `10.32.0.0/18`, gateway `10.32.0.1`, DNS `10.32.239.2`
+  * `POOL-SENSOR-UTARA`: `10.32.236.0/23`, gateway `10.32.236.1`, DNS `10.32.239.2`
+* **R-SELATAN**:
+  * `POOL-WIFI-SELATAN`: `10.32.64.0/19`, gateway `10.32.64.1`, DNS `10.32.239.2`
+  * `POOL-PJU-SELATAN`: `10.32.240.128/25`, gateway `10.32.240.129`, DNS `10.32.239.2`
+* **R-TIMUR**:
+  * `POOL-WIFI-TIMUR`: `10.32.128.0/19`, gateway `10.32.128.1`, DNS `10.32.239.2`
+  * `POOL-SENSOR-TIMUR`: `10.32.232.0/22`, gateway `10.32.232.1`, DNS `10.32.239.2`
+* **R-BARAT**:
+  * `POOL-WIFI-BARAT`: `10.32.192.0/19`, gateway `10.32.192.1`, DNS `10.32.239.2`
+  * `POOL-PUSKESMAS-BARAT`: `10.32.238.0/24`, gateway `10.32.238.1`, DNS `10.32.239.2`
+* **R-PELABUHAN**:
+  * `POOL-SCADA-PELABUHAN`: `10.32.160.0/19`, gateway `10.32.160.1`, DNS `10.32.239.2`
+  * `POOL-KANTOR-PELABUHAN`: `10.32.240.0/25`, gateway `10.32.240.1`, DNS `10.32.239.2`
+* **R-PUSAT**:
+  * `POOL-PEGAWAI-BALAIKOTA`: `10.32.224.0/21`, gateway `10.32.224.1`, DNS `10.32.239.2`
+
+---
+
+### 5. Konfigurasi Network Address Translation (NAT)
+
+Untuk mengamankan jaringan internal dan memungkinkan akses ke internet publik (`Server 8.8.8.8` di balik `R-ISP`), mekanisme **Port Address Translation (PAT / NAT Overload)** diterapkan pada `R-PUSAT`. Sesuai aturan soal, `R-ISP` sama sekali tidak memiliki rute ke blok IP privat internal (`10.32.0.0/16`).
+
+#### 5.1 Konfigurasi NAT Overload pada R-PUSAT
+```
+R-PUSAT(config)# access-list 1 permit 10.32.0.0 0.0.255.255
+R-PUSAT(config)# access-list 1 permit 192.168.4.0 0.0.0.3
+R-PUSAT(config)# ip nat inside source list 1 interface GigabitEthernet0/1 overload
+
+R-PUSAT(config)# interface GigabitEthernet0/1
+R-PUSAT(config-if)# ip nat outside
+R-PUSAT(config-if)# exit
+
+R-PUSAT(config)# interface range GigabitEthernet0/0.10, GigabitEthernet0/0.20, GigabitEthernet0/0.30, GigabitEthernet0/0.40, GigabitEthernet0/0.50, GigabitEthernet0/0.60, GigabitEthernet0/0.70
+R-PUSAT(config-if-range)# ip nat inside
+R-PUSAT(config-if-range)# exit
+```
+
+#### 5.2 Pengujian NAT
+Pengujian ping dari host internal (`PC12` di Balai Kota, `PC0` di CCTV DC, dan `PC11` di Pelabuhan) ke `8.8.8.8` berhasil dengan 0% loss. Perintah `show ip nat translations` di `R-PUSAT` mengonfirmasi translasi IP privat ke IP publik `203.0.113.17`.
+
+---
+
+### 6. Konfigurasi Tunnel GRE (Generic Routing Encapsulation)
+
+Tunnel GRE dibangun secara *point-to-point* antara `R-PUSAT` dan `R-PELABUHAN` menggunakan blok pengalamatan `192.168.4.0/30` ($K=4$). Seluruh lalu lintas antar-subnet Balai Kota dan Pelabuhan diarahkan melewati tunnel ini.
+
+#### 6.1 Konfigurasi Tunnel Interface
+
+1. **R-PUSAT:**
+   ```
+   R-PUSAT(config)# interface Tunnel0
+   R-PUSAT(config-if)# ip address 192.168.4.1 255.255.255.252
+   R-PUSAT(config-if)# tunnel source GigabitEthernet0/0.20
+   R-PUSAT(config-if)# tunnel destination 10.32.241.54
+   R-PUSAT(config-if)# exit
+   R-PUSAT(config)# ip route 10.32.160.0 255.255.224.0 192.168.4.2
+   R-PUSAT(config)# ip route 10.32.240.0 255.255.255.128 192.168.4.2
+   ```
+
+2. **R-PELABUHAN:**
+   ```
+   R-PELABUHAN(config)# interface Tunnel0
+   R-PELABUHAN(config-if)# ip address 192.168.4.2 255.255.255.252
+   R-PELABUHAN(config-if)# tunnel source GigabitEthernet0/0
+   R-PELABUHAN(config-if)# tunnel destination 10.32.241.37
+   R-PELABUHAN(config-if)# exit
+   R-PELABUHAN(config)# ip route 10.32.224.0 255.255.248.0 192.168.4.1
+   R-PELABUHAN(config)# ip route 10.32.241.0 255.255.255.224 192.168.4.1
+   ```
+
+#### 6.2 Verifikasi Jalur Tunnel (Traceroute)
+Hasil pelacakan rute (`tracert 10.32.240.2`) dari `PC12` (Balai Kota) ke `PC11` (Kantor Pelabuhan):
+```
+Tracing route to 10.32.240.2 over a maximum of 30 hops:
+
+  1   0 ms      0 ms      0 ms      10.32.224.1 (R-PUSAT)
+  2   0 ms      1 ms      0 ms      192.168.4.2 (Tunnel0 R-PELABUHAN)
+  3   0 ms      0 ms      0 ms      10.32.240.2 (PC11 Kantor Pelabuhan)
+
+Trace complete.
+```
+Hop lompatan melewati `192.168.4.2` membuktikan bahwa paket dienkapsulasi GRE langsung ke Pelabuhan tanpa melalui hop routing IP `R-UTARA`.
+
+#### 6.3 Analisis & Pertimbangan Teknis
+1. **Alasan Pemilihan Jalur Tunnel oleh Router:**
+   Router memilih jalur tunnel karena tabel routing memiliki entri *static route* spesifik (`10.32.160.0/19` dan `10.32.240.0/25`) yang menunjuk ke *next-hop* `192.168.4.2` (`Tunnel0`). Berdasarkan prinsip *Longest Prefix Match* dan prioritas entri rute spesifik, rute melalui interface tunnel mengesampingkan rute default maupun rute umum lainnya.
+2. **Mengapa GRE Saja Tidak Mengenkrpsi Data:**
+   Protokol GRE (IP Protocol 47) dirancang sebagai mekanisme enkapsulasi paket untuk membawa protokol layer 3 lain di atas jaringan IP. GRE hanya menambahkan header GRE (4 byte) dan IP header baru di luar paket asli tanpa menyertakan mekanisme kriptografi (tidak ada hashing integritas pesan, pertukaran kunci rahasia, maupun cipher enkripsi simetris seperti AES). Akibatnya, payload di dalam paket GRE tetap berupa *plaintext* dan dapat dibaca dengan sniffer jaringan. Untuk mengamankan data, GRE memerlukan protokol keamanan tambahan seperti IPsec (*GRE over IPsec*).
