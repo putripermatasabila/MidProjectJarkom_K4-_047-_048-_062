@@ -490,3 +490,309 @@ Hop lompatan melewati `192.168.4.2` membuktikan bahwa paket dienkapsulasi GRE la
    Router memilih jalur tunnel karena tabel routing memiliki entri *static route* spesifik (`10.32.160.0/19` dan `10.32.240.0/25`) yang menunjuk ke *next-hop* `192.168.4.2` (`Tunnel0`). Berdasarkan prinsip *Longest Prefix Match* dan prioritas entri rute spesifik, rute melalui interface tunnel mengesampingkan rute default maupun rute umum lainnya.
 2. **Mengapa GRE Saja Tidak Mengenkrpsi Data:**
    Protokol GRE (IP Protocol 47) dirancang sebagai mekanisme enkapsulasi paket untuk membawa protokol layer 3 lain di atas jaringan IP. GRE hanya menambahkan header GRE (4 byte) dan IP header baru di luar paket asli tanpa menyertakan mekanisme kriptografi (tidak ada hashing integritas pesan, pertukaran kunci rahasia, maupun cipher enkripsi simetris seperti AES). Akibatnya, payload di dalam paket GRE tetap berupa *plaintext* dan dapat dibaca dengan sniffer jaringan. Untuk mengamankan data, GRE memerlukan protokol keamanan tambahan seperti IPsec (*GRE over IPsec*).
+
+   # 7. Verifikasi dan Finalisasi Perhitungan CIDR
+
+### 7.1 Pemeriksaan Skema Pengalamatan
+
+Pemeriksaan dilakukan terhadap spreadsheet perhitungan VLSM dan CIDR
+Kelompok 4. Perhitungan menggunakan nomor kelompok (K=4), sehingga oktet
+kedua untuk blok privat adalah (8 `\times 4`{=tex} = 32).
+
+Terdapat dua rancangan pengalamatan yang harus dibedakan:
+
+  -----------------------------------------------------------------------
+  Metode                  Blok induk              Kegunaan
+  ----------------------- ----------------------- -----------------------
+  VLSM                    `10.32.0.0/16`          Skema alamat yang
+                                                  digunakan pada topologi
+                                                  Cisco Packet Tracer dan
+                                                  konfigurasi router yang
+                                                  sudah ada
+
+  CIDR                    `10.32.0.0/14`          Rancangan penggabungan
+                                                  subnet (*supernetting*)
+                                                  per-router untuk
+                                                  kebutuhan agregasi rute
+  -----------------------------------------------------------------------
+
+Sheet VLSM dan CIDR sama-sama memuat 20 subnet, yang terdiri atas 14 LAN
+dan 6 link *point-to-point*. Jumlah kebutuhan host berdasarkan soal
+adalah 42.092 host, sedangkan kebutuhan alamat setelah memperhitungkan
+alamat network, broadcast, gateway LAN, dan endpoint link adalah 42.146
+alamat.
+
+### 7.2 Hasil Verifikasi VLSM
+
+Alokasi VLSM menggunakan blok `10.32.0.0/16` atau 65.536 alamat. Total
+ukuran blok dari 20 subnet individual adalah 61.752 alamat. Pemeriksaan
+dilakukan pada kebutuhan host, ukuran blok, prefix, subnet mask, Network
+ID, gateway, rentang host, dan alamat broadcast.
+
+Hasil pemeriksaan menunjukkan bahwa 20 subnet pada sheet VLSM memiliki
+ukuran blok yang mencukupi, Network ID yang sesuai batas blok, rentang
+host dan broadcast yang konsisten, serta tidak ditemukan subnet yang
+saling tumpang tindih (*overlap*).
+
+### 7.3 Hasil Penggabungan CIDR per-Router
+
+Penggabungan CIDR dilakukan dengan mengelompokkan subnet berdasarkan
+router yang melayaninya. Hasil pohon *supernetting* adalah sebagai
+berikut.
+
+  --------------------------------------------------------------------------
+  Node /            Kebutuhan   Ukuran blok        Prefix Blok CIDR
+  Kelompok             alamat                             
+  ------------- ------------- ------------- ------------- ------------------
+  R-UTARA              16.900        32.768         `/17` `10.32.0.0/17`
+  (lokal)                                                 
+
+  R-PELABUHAN           8.324        16.384         `/18` `10.32.128.0/18`
+
+  R-DC                  8.452        16.384         `/18` `10.33.0.0/18`
+
+  R-BARAT               8.452        16.384         `/18` `10.33.64.0/18`
+
+  R-SELATAN             8.324        16.384         `/18` `10.33.128.0/18`
+
+  R-TIMUR               9.220        16.384         `/18` `10.33.192.0/18`
+
+  R-PUSAT (LAN          2.080         4.096         `/20` `10.34.0.0/20`
+  lokal)                                                  
+
+  R-UTARA +            49.152        65.536         `/16` `10.32.0.0/16`
+  R-PELABUHAN                                             
+
+  R-PUSAT             135.168       262.144         `/14` `10.32.0.0/14`
+  (root)                                                  
+  --------------------------------------------------------------------------
+
+Berdasarkan hasil tersebut, blok gabungan akhir atau *root CIDR* adalah
+`10.32.0.0/14`, dengan rentang `10.32.0.0` sampai `10.35.255.255`.
+Ukuran blok root tersebut adalah 262.144 alamat. Total ukuran blok
+subnet individual tetap 61.752 alamat; angka 262.144 merupakan ukuran
+blok agregasi root, bukan jumlah alamat yang dipakai oleh seluruh host.
+
+### 7.4 Kesimpulan Audit Spreadsheet
+
+  Parameter                                                                       Hasil
+  ----------------------------------------------------- -------------------------------
+  Jumlah subnet                                           20 subnet (14 LAN dan 6 link)
+  Total host sesuai soal                                                         42.092
+  Total kebutuhan alamat                                                         42.146
+  Total ukuran blok subnet individual                                     61.752 alamat
+  Ukuran blok induk VLSM                                          65.536 alamat (`/16`)
+  Ukuran blok root CIDR                                          262.144 alamat (`/14`)
+  Efisiensi kebutuhan alamat terhadap blok induk VLSM                            64,31%
+  Efisiensi kebutuhan alamat terhadap root CIDR                                  16,08%
+  Subnet overlap                                                        Tidak ditemukan
+
+Dengan demikian, spreadsheet telah diperiksa pada kedua metode. **Alamat
+VLSM `10.32.0.0/16` tetap menjadi acuan untuk topologi Cisco Packet
+Tracer yang sudah dikonfigurasi.** Hasil CIDR `10.32.0.0/14` merupakan
+rancangan agregasi terpisah. Kedua skema tidak boleh dicampur dalam satu
+konfigurasi jaringan.
+
+------------------------------------------------------------------------
+
+## 8. Konfigurasi Layanan Server Aplikasi
+
+### 8.1 Identitas dan Pengalamatan Server
+
+Layanan aplikasi ditempatkan pada server di jaringan Server dan Storage
+Data Center (R-DC). Berdasarkan dokumen pengalamatan kelompok, server
+menggunakan konfigurasi berikut.
+
+  Parameter                                 Nilai
+  ----------------------------------------- ------------------
+  Nama perangkat                            Server-DC
+  Network                                   `10.32.239.0/24`
+  IP Address server                         `10.32.239.2`
+  Subnet Mask                               `255.255.255.0`
+  Default Gateway                           `10.32.239.1`
+  DNS Server yang dibagikan ke klien DHCP   `10.32.239.2`
+
+Server-DC menjadi titik layanan terpusat untuk kebutuhan resolusi nama
+dan layanan aplikasi jaringan Smart City. Layanan yang menjadi tanggung
+jawab bagian ini meliputi DNS, Web Smart City, FTP CCTV, dan Email.
+
+### 8.2 Konfigurasi DNS
+
+Layanan DNS dikonfigurasi pada Server-DC dengan alamat `10.32.239.2`.
+Alamat tersebut juga digunakan sebagai alamat DNS pada konfigurasi DHCP
+jaringan pengguna.
+
+DNS berfungsi menerjemahkan nama domain atau nama host menjadi alamat IP
+tujuan sehingga pengguna dapat mengakses layanan menggunakan nama yang
+lebih mudah diingat daripada alamat IP.
+
+**Verifikasi yang perlu ditampilkan pada bukti konfigurasi:** - Status
+layanan DNS pada Server-DC. - Daftar *resource record* atau pemetaan
+nama domain ke alamat IP. - Pengujian resolusi nama dari salah satu PC
+klien.
+
+*Catatan dokumentasi: nama domain dan daftar record DNS final tidak
+tercantum pada dokumen acuan yang tersedia. Masukkan nama dan alamat
+sesuai tampilan akhir Packet Tracer, bukan berdasarkan perkiraan.*
+
+### 8.3 Konfigurasi Web Smart City
+
+Layanan Web Smart City dikonfigurasi pada server aplikasi agar halaman
+web dapat diakses oleh klien jaringan. Pengujian dilakukan melalui
+aplikasi Web Browser pada PC klien dengan memasukkan alamat layanan yang
+telah didaftarkan pada DNS.
+
+**Verifikasi yang perlu ditampilkan pada bukti konfigurasi:** - Status
+layanan HTTP/HTTPS pada Server-DC. - Halaman Web Smart City yang
+tersimpan pada server. - Hasil akses halaman melalui Web Browser klien,
+sebaiknya menggunakan nama domain.
+
+*Catatan dokumentasi: URL/domain final dan isi halaman web tidak
+tercantum pada dokumen acuan yang tersedia. Cantumkan alamat yang
+benar-benar digunakan pada simulasi.*
+
+### 8.4 Konfigurasi FTP CCTV
+
+Layanan FTP disiapkan untuk kebutuhan transfer berkas pada jaringan
+CCTV. Pengujian yang telah dilaporkan adalah pengunggahan (*upload*)
+berkas ke server FTP.
+
+**Verifikasi yang perlu ditampilkan pada bukti konfigurasi:** - Status
+layanan FTP pada server. - Pengaturan akun pengguna dan hak akses sesuai
+konfigurasi aktual. - Proses koneksi dari PC klien. - Hasil perintah
+*upload* dan keberadaan berkas pada direktori server.
+
+Pengujian *upload* dilaporkan berhasil. Nama akun FTP, direktori
+penyimpanan, dan keluaran perintah secara lengkap perlu mengikuti
+konfigurasi aktual pada Packet Tracer.
+
+### 8.5 Konfigurasi Email
+
+Layanan Email dikonfigurasi agar pengguna jaringan dapat melakukan
+pertukaran pesan melalui server. Pengujian yang telah dilaporkan
+mencakup pengiriman dan penerimaan email.
+
+**Verifikasi yang perlu ditampilkan pada bukti konfigurasi:** - Status
+layanan SMTP dan POP3 pada server. - Domain email yang digunakan. - Akun
+email pengirim dan penerima. - Pesan yang berhasil dikirim dan pesan
+yang diterima pada kotak masuk penerima.
+
+Pengujian kirim dan terima email dilaporkan berhasil. Domain dan nama
+akun final perlu ditulis sesuai konfigurasi aktual pada simulasi.
+
+### 8.6 Rekapitulasi Layanan Aplikasi
+
+  -----------------------------------------------------------------------
+  Layanan                 Fungsi                  Status pengerjaan yang
+                                                  dilaporkan
+  ----------------------- ----------------------- -----------------------
+  DNS                     Menerjemahkan nama      Dikonfigurasi
+                          domain/host ke alamat   
+                          IP                      
+
+  Web Smart City          Menyediakan halaman     Dikonfigurasi
+                          informasi berbasis web  
+
+  FTP CCTV                Melakukan transfer      Diuji upload
+                          berkas CCTV             
+
+  Email                   Mengirim dan menerima   Diuji kirim dan terima
+                          pesan elektronik        
+  -----------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+## 9. Dynamic Routing OSPF dan Link Cadangan L7
+
+### 9.1 Tujuan Konfigurasi
+
+Selain file utama yang menggunakan *static routing*, disiapkan salinan
+topologi khusus untuk penerapan *dynamic routing* menggunakan Open
+Shortest Path First (OSPF). Tujuannya adalah agar router dapat bertukar
+informasi rute secara dinamis dan memiliki jalur alternatif ketika jalur
+utama mengalami gangguan.
+
+Pada topologi dasar, jalur dari R-PUSAT menuju R-PELABUHAN melewati
+R-UTARA. Jalur tersebut menggunakan link L2 antara R-PUSAT dan R-UTARA,
+kemudian link L6 antara R-UTARA dan R-PELABUHAN. Link L7 dimaksudkan
+sebagai jalur cadangan tambahan pada salinan topologi OSPF.
+
+### 9.2 Pembedaan Link L6 dan Link L7
+
+Dokumen topologi utama mencatat link L6 sebagai koneksi R-UTARA dan
+R-PELABUHAN dengan rincian berikut.
+
+  ----------------------------------------------------------------------------------------
+  Link pada  Router A  IP Router A      Router B      IP Router B      Network
+  topologi                                                             
+  utama                                                                
+  ---------- --------- ---------------- ------------- ---------------- -------------------
+  L6         R-UTARA   `10.32.241.53`   R-PELABUHAN   `10.32.241.54`   `10.32.241.52/30`
+
+  ----------------------------------------------------------------------------------------
+
+Alamat tersebut merupakan link L6 pada laporan utama. Oleh karena itu,
+alamat tersebut tidak boleh ditulis ulang sebagai L7 tanpa memeriksa
+salinan file OSPF dan konfigurasi interface yang sebenarnya.
+
+### 9.3 Konfigurasi dan Verifikasi OSPF
+
+Pada riwayat pengujian OSPF, adjacency dengan status **FULL** pernah
+dilaporkan pada koneksi R-UTARA dan R-PELABUHAN menggunakan OSPF process
+1, area 0, dan cost 1. Namun, alamat `10.32.241.52/30` pada dokumen
+utama adalah link L6. Bukti tersebut menunjukkan adjacency pada koneksi
+tersebut, tetapi belum cukup untuk membuktikan bahwa link cadangan L7
+sudah terpasang dan berfungsi.
+
+Perintah verifikasi yang perlu didokumentasikan pada router:
+
+``` text
+show ip interface brief
+show ip ospf neighbor
+show ip route
+show ip route ospf
+```
+
+### 9.4 Pengujian Failover Link Cadangan
+
+Pengujian failover dilakukan untuk memastikan bahwa ketika jalur utama
+diputus, router tetap dapat meneruskan paket melalui jalur cadangan L7.
+Pengujian harus dilakukan pada salinan file OSPF, bukan pada file utama
+yang menggunakan static routing.
+
+Tahapan pembuktian: 1. Catat kondisi awal interface dan neighbor OSPF.
+2. Periksa jalur menuju subnet tujuan melalui `show ip route`. 3.
+Lakukan pengujian konektivitas (*ping*) dari jaringan sumber ke jaringan
+tujuan. 4. Nonaktifkan interface jalur utama pada salinan simulasi. 5.
+Periksa kembali tabel routing dan pastikan jalur alternatif melalui L7
+dipilih. 6. Ulangi pengujian *ping* untuk memastikan konektivitas tetap
+berjalan. 7. Aktifkan kembali interface utama dan dokumentasikan
+perubahan rute.
+
+**Status bukti:** hasil adjacency OSPF pada link yang tercatat sebagai
+L6 pernah dilaporkan FULL. Alamat/interface L7 yang terpisah dan hasil
+uji pemutusan jalur utama belum terkonfirmasi pada dokumen acuan. Karena
+itu, bagian L7 dan hasil failover harus dilengkapi menggunakan output
+aktual dari file OSPF sebelum dinyatakan berhasil.
+
+------------------------------------------------------------------------
+
+## 10. Kesimpulan Pekerjaan Anggota 3
+
+Pekerjaan Anggota 3 mencakup finalisasi perhitungan CIDR, konfigurasi
+layanan aplikasi pada Server-DC, serta penyiapan salinan topologi dengan
+dynamic routing OSPF dan jalur cadangan L7.
+
+Hasil audit menunjukkan bahwa perhitungan VLSM dan CIDR memuat 20 subnet
+dan tidak ditemukan subnet yang saling tumpang tindih. Blok VLSM
+`10.32.0.0/16` tetap digunakan sebagai acuan topologi utama, sedangkan
+root CIDR `10.32.0.0/14` digunakan untuk rancangan agregasi. Layanan DNS
+dan Web Smart City telah dikonfigurasi, FTP telah diuji upload, serta
+Email telah diuji untuk pengiriman dan penerimaan pesan. Untuk OSPF,
+adjacency pada link yang tercatat sebagai L6 pernah menunjukkan status
+FULL, sedangkan pembuktian bahwa L7 berfungsi sebagai jalur cadangan
+masih memerlukan dokumentasi alamat/interface L7 dan hasil pengujian
+failover.
+
+------------------------------------------------------------------------
+
