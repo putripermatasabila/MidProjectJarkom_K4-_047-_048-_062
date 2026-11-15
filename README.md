@@ -9,11 +9,8 @@
 | Putri Permata Sabila | 5027251047 |
 | M.Faris Roisul Azhar | 5027251048 |
 | Izzat Ilham Wahyudi  | 5027251062 |
-## Daftar Isi
 
-1. [Topologi dan Pengalamatan IP](#1-topologi-dan-pengalamatan-ip)
-2. [Konfigurasi Routing Statis (Static Routing)](#2-konfigurasi-routing-statis-static-routing)
-3. [Pengujian Konektivitas (Ping dan Tracert)](#3-pengujian-konektivitas-ping-dan-tracert)
+## Daftar Isi
 
 ---
 
@@ -69,7 +66,7 @@ Skema VLSM dipilih karena kebutuhan host tiap LAN sangat bervariasi, mulai dari 
 
 **Output Topologi**
 
-![Output Topologi](assets/topologi.png)
+![Output Topologi](assets/NEW-topologi.png)
 
 #### 1.2 Konfigurasi IP Antarmuka Router
 
@@ -93,96 +90,119 @@ Perintah `no shutdown` wajib dijalankan pada kedua ujung link agar indikator kab
 
 #### 1.3 Alokasi IP per Wilayah
 
+Interface router dan server dikonfigurasi statis sesuai tabel subnetting (alamat gateway adalah alamat host pertama tiap subnet). Perangkat pengguna (PC dan laptop) mendapat IP, gateway, dan DNS otomatis dari DHCP, dijelaskan di bagian DHCP.
+
+Setiap wilayah dibuktikan dengan dua perintah di router:
+
+- `show ip interface brief`: memastikan alamat tiap interface sesuai tabel dan statusnya up/up.
+- `show ip route connected`: memastikan network ID dan prefix (subnet mask) tiap LAN sesuai tabel.
+
 ##### A. Wilayah Pusat (R-PUSAT)
 
-| LAN                                   | Perangkat             | IP Address    | Subnet Mask       | Default Gateway |
-| ------------------------------------- | --------------------- | ------------- | ----------------- | --------------- |
-| Pegawai Balai Kota (`10.32.224.0/21`) | Router                | `10.32.224.1` | `255.255.248.0`   | -               |
-|                                       | PC Pegawai Balai Kota | `10.32.224.2` | `255.255.248.0`   | `10.32.224.1`   |
-| Server Balai Kota (`10.32.241.0/27`)  | Router                | `10.32.241.1` | `255.255.255.224` | -               |
-|                                       | PC Server Balai Kota  | `10.32.241.2` | `255.255.255.224` | `10.32.241.1`   |
+| LAN                                   | Perangkat | IP Address    | Subnet Mask       |
+| ------------------------------------- | --------- | ------------- | ----------------- |
+| Pegawai Balai Kota (`10.32.224.0/21`) | Router    | `10.32.224.1` | `255.255.248.0`   |
+| Server Balai Kota (`10.32.241.0/27`)  | Router    | `10.32.241.1` | `255.255.255.224` |
+|                                       | Server    | `10.32.241.2` | `255.255.255.224` |
 
 **Output R-PUSAT**
 
-![Output IP R-PUSAT](assets/ip-r-pusat.png)
+![Output show ip interface brief R-PUSAT](assets/NEW-show-ip-brief-route-pusat.png)
+
+Subinterface `GigabitEthernet0/0.70` berada di `10.32.224.1` dan `GigabitEthernet0/0.60` di `10.32.241.1`, keduanya up/up.
+
+Muncul `C 10.32.224.0/21` dan `C 10.32.241.0/27`, sesuai network ID dan prefix pada tabel.
 
 ##### B. Wilayah Data Center (R-DC)
 
-| LAN                                      | Perangkat                | IP Address    | Subnet Mask     | Default Gateway |
-| ---------------------------------------- | ------------------------ | ------------- | --------------- | --------------- |
-| CCTV Kota (`10.32.96.0/19`)              | Router                   | `10.32.96.1`  | `255.255.224.0` | -               |
-|                                          | PC CCTV Kota             | `10.32.96.2`  | `255.255.224.0` | `10.32.96.1`    |
-| Server dan Storage DC (`10.32.239.0/24`) | Router                   | `10.32.239.1` | `255.255.255.0` | -               |
-|                                          | PC Server dan Storage DC | `10.32.239.2` | `255.255.255.0` | `10.32.239.1`   |
+| LAN                                      | Perangkat | IP Address    | Subnet Mask     |
+| ---------------------------------------- | --------- | ------------- | --------------- |
+| CCTV Kota (`10.32.96.0/19`)              | Router    | `10.32.96.1`  | `255.255.224.0` |
+| Server dan Storage DC (`10.32.239.0/24`) | Router    | `10.32.239.1` | `255.255.255.0` |
+|                                          | Server    | `10.32.239.2` | `255.255.255.0` |
 
 **Output R-DC**
 
-![Output IP R-DC](assets/ip-r-dc.png)
+![Output show ip interface brief R-DC](assets/NEW-show-ip-brief-route-dc.png)
+
+Interface LAN CCTV berada di `10.32.96.1` dan LAN Server DC di `10.32.239.1`, keduanya up/up.
+
+Muncul `C 10.32.96.0/19` dan `C 10.32.239.0/24`.
 
 ##### C. Wilayah Utara (R-UTARA)
 
-| LAN                                         | Perangkat            | IP Address    | Subnet Mask     | Default Gateway |
-| ------------------------------------------- | -------------------- | ------------- | --------------- | --------------- |
-| WiFi Publik Utara (`10.32.0.0/18`)          | Router               | `10.32.0.1`   | `255.255.192.0` | -               |
-|                                             | PC WiFi Publik Utara | `10.32.0.2`   | `255.255.192.0` | `10.32.0.1`     |
-| Sensor Lalu Lintas Utara (`10.32.236.0/23`) | Router               | `10.32.236.1` | `255.255.254.0` | -               |
-|                                             | PC Sensor Utara      | `10.32.236.2` | `255.255.254.0` | `10.32.236.1`   |
+| LAN                                         | Perangkat | IP Address    | Subnet Mask     |
+| ------------------------------------------- | --------- | ------------- | --------------- |
+| WiFi Publik Utara (`10.32.0.0/18`)          | Router    | `10.32.0.1`   | `255.255.192.0` |
+| Sensor Lalu Lintas Utara (`10.32.236.0/23`) | Router    | `10.32.236.1` | `255.255.254.0` |
 
 **Output R-UTARA**
 
-![Output IP R-UTARA](assets/ip-r-utara.png)
+![Output show ip interface brief R-UTARA](assets/NEW-show-ip-brief-route-utara.png)
+
+Interface WiFi Utara berada di `10.32.0.1` dan Sensor Lalu Lintas di `10.32.236.1`, keduanya up/up.
+
+Muncul `C 10.32.0.0/18` dan `C 10.32.236.0/23`.
 
 ##### D. Wilayah Pelabuhan (R-PELABUHAN)
 
-| LAN                                 | Perangkat           | IP Address    | Subnet Mask       | Default Gateway |
-| ----------------------------------- | ------------------- | ------------- | ----------------- | --------------- |
-| Sensor dan SCADA (`10.32.160.0/19`) | Router              | `10.32.160.1` | `255.255.224.0`   | -               |
-|                                     | PC SCADA            | `10.32.160.2` | `255.255.224.0`   | `10.32.160.1`   |
-| Kantor Pelabuhan (`10.32.240.0/25`) | Router              | `10.32.240.1` | `255.255.255.128` | -               |
-|                                     | PC Kantor Pelabuhan | `10.32.240.2` | `255.255.255.128` | `10.32.240.1`   |
+| LAN                                 | Perangkat | IP Address    | Subnet Mask       |
+| ----------------------------------- | --------- | ------------- | ----------------- |
+| Sensor dan SCADA (`10.32.160.0/19`) | Router    | `10.32.160.1` | `255.255.224.0`   |
+| Kantor Pelabuhan (`10.32.240.0/25`) | Router    | `10.32.240.1` | `255.255.255.128` |
 
 **Output R-PELABUHAN**
 
-![Output IP R-PELABUHAN](assets/ip-r-pelabuhan.png)
+![Output show ip interface brief R-PELABUHAN](assets/NEW-show-ip-brief-route-pelabuhan.png)
+
+Interface SCADA berada di `10.32.160.1` dan Kantor Pelabuhan di `10.32.240.1`, keduanya up/up.
+
+Muncul `C 10.32.160.0/19` dan `C 10.32.240.0/25`.
 
 ##### E. Wilayah Barat (R-BARAT)
 
-| LAN                                      | Perangkat            | IP Address    | Subnet Mask     | Default Gateway |
-| ---------------------------------------- | -------------------- | ------------- | --------------- | --------------- |
-| WiFi Publik Barat (`10.32.192.0/19`)     | Router               | `10.32.192.1` | `255.255.224.0` | -               |
-|                                          | PC WiFi Publik Barat | `10.32.192.2` | `255.255.224.0` | `10.32.192.1`   |
-| Puskesmas dan Sekolah (`10.32.238.0/24`) | Router               | `10.32.238.1` | `255.255.255.0` | -               |
-|                                          | PC Puskesmas         | `10.32.238.2` | `255.255.255.0` | `10.32.238.1`   |
+| LAN                                      | Perangkat | IP Address    | Subnet Mask     |
+| ---------------------------------------- | --------- | ------------- | --------------- |
+| WiFi Publik Barat (`10.32.192.0/19`)     | Router    | `10.32.192.1` | `255.255.224.0` |
+| Puskesmas dan Sekolah (`10.32.238.0/24`) | Router    | `10.32.238.1` | `255.255.255.0` |
 
 **Output R-BARAT**
 
-![Output IP R-BARAT](assets/ip-r-barat.png)
+![Output show ip interface brief R-BARAT](assets/NEW-show-ip-brief-route-barat.png)
+
+Interface WiFi Barat berada di `10.32.192.1` dan Puskesmas dan Sekolah di `10.32.238.1`, keduanya up/up.
+
+Muncul `C 10.32.192.0/19` dan `C 10.32.238.0/24`.
 
 ##### F. Wilayah Timur (R-TIMUR)
 
-| LAN                                    | Perangkat            | IP Address    | Subnet Mask     | Default Gateway |
-| -------------------------------------- | -------------------- | ------------- | --------------- | --------------- |
-| WiFi Publik Timur (`10.32.128.0/19`)   | Router               | `10.32.128.1` | `255.255.224.0` | -               |
-|                                        | PC WiFi Publik Timur | `10.32.128.2` | `255.255.224.0` | `10.32.128.1`   |
-| Sensor Banjir Timur (`10.32.232.0/22`) | Router               | `10.32.232.1` | `255.255.252.0` | -               |
-|                                        | PC Sensor Timur      | `10.32.232.2` | `255.255.252.0` | `10.32.232.1`   |
+| LAN                                    | Perangkat | IP Address    | Subnet Mask     |
+| -------------------------------------- | --------- | ------------- | --------------- |
+| WiFi Publik Timur (`10.32.128.0/19`)   | Router    | `10.32.128.1` | `255.255.224.0` |
+| Sensor Banjir Timur (`10.32.232.0/22`) | Router    | `10.32.232.1` | `255.255.252.0` |
 
 **Output R-TIMUR**
 
-![Output IP R-TIMUR](assets/ip-r-timur.png)
+![Output show ip interface brief R-TIMUR](assets/NEW-show-ip-brief-route-timur.png)
+
+Interface WiFi Timur berada di `10.32.128.1` dan Sensor Banjir di `10.32.232.1`, keduanya up/up.
+
+Muncul `C 10.32.128.0/19` dan `C 10.32.232.0/22`.
 
 ##### G. Wilayah Selatan (R-SELATAN)
 
-| LAN                                     | Perangkat              | IP Address      | Subnet Mask       | Default Gateway |
-| --------------------------------------- | ---------------------- | --------------- | ----------------- | --------------- |
-| WiFi Publik Selatan (`10.32.64.0/19`)   | Router                 | `10.32.64.1`    | `255.255.224.0`   | -               |
-|                                         | PC WiFi Publik Selatan | `10.32.64.2`    | `255.255.224.0`   | `10.32.64.1`    |
-| PJU Pintar Selatan (`10.32.240.128/25`) | Router                 | `10.32.240.129` | `255.255.255.128` | -               |
-|                                         | PC PJU Pintar          | `10.32.240.130` | `255.255.255.128` | `10.32.240.129` |
+| LAN                                     | Perangkat | IP Address      | Subnet Mask       |
+| --------------------------------------- | --------- | --------------- | ----------------- |
+| WiFi Publik Selatan (`10.32.64.0/19`)   | Router    | `10.32.64.1`    | `255.255.224.0`   |
+| PJU Pintar Selatan (`10.32.240.128/25`) | Router    | `10.32.240.129` | `255.255.255.128` |
 
 **Output R-SELATAN**
 
-![Output IP R-SELATAN](assets/ip-r-selatan.png)
+![Output show ip interface brief R-SELATAN](assets/NEW-show-ip-brief-route-selatan.png)
+
+Interface WiFi Selatan berada di `10.32.64.1` dan PJU Pintar di `10.32.240.129`, keduanya up/up.
+
+Muncul `C 10.32.64.0/19` dan `C 10.32.240.128/25`.
 
 ---
 
@@ -291,10 +311,6 @@ S       10.32.240.128/25 [1/0] via 10.32.241.42
 ...
 ```
 
-**Output show ip route R-PUSAT**
-
-![Output show ip route R-PUSAT](assets/route-r-pusat.png)
-
 ---
 
 ### 3. Pengujian Konektivitas (Ping dan Tracert)
@@ -382,6 +398,7 @@ C:\> tracert 10.32.160.2
 Sesuai spesifikasi, seluruh interface router dan server menggunakan pengalamatan statis, sedangkan perangkat pengguna di setiap LAN memperoleh konfigurasi IP, subnet mask, default gateway, dan DNS server (`10.32.239.2`) secara dinamis.
 
 #### 4.1 DHCP Relay untuk Subnet CCTV Kota
+
 Khusus subnet CCTV Kota (`10.32.96.0/19`), alamat IP tidak dilayani oleh router `R-DC`, melainkan dialokasikan oleh server DHCP terpusat di LAN Server dan Storage DC (`Server-DC`, IP `10.32.239.2`).
 
 1. **Konfigurasi IP Helper di R-DC:**
@@ -399,25 +416,26 @@ Khusus subnet CCTV Kota (`10.32.96.0/19`), alamat IP tidak dilayani oleh router 
    - Start IP: `10.32.96.2`
 
 #### 4.2 Pool DHCP pada Router Wilayah
+
 Pada masing-masing router wilayah lain, pool DHCP diaktifkan untuk melayani LAN pengguna:
 
-* **R-UTARA**:
-  * `POOL-WIFI-UTARA`: `10.32.0.0/18`, gateway `10.32.0.1`, DNS `10.32.239.2`
-  * `POOL-SENSOR-UTARA`: `10.32.236.0/23`, gateway `10.32.236.1`, DNS `10.32.239.2`
-* **R-SELATAN**:
-  * `POOL-WIFI-SELATAN`: `10.32.64.0/19`, gateway `10.32.64.1`, DNS `10.32.239.2`
-  * `POOL-PJU-SELATAN`: `10.32.240.128/25`, gateway `10.32.240.129`, DNS `10.32.239.2`
-* **R-TIMUR**:
-  * `POOL-WIFI-TIMUR`: `10.32.128.0/19`, gateway `10.32.128.1`, DNS `10.32.239.2`
-  * `POOL-SENSOR-TIMUR`: `10.32.232.0/22`, gateway `10.32.232.1`, DNS `10.32.239.2`
-* **R-BARAT**:
-  * `POOL-WIFI-BARAT`: `10.32.192.0/19`, gateway `10.32.192.1`, DNS `10.32.239.2`
-  * `POOL-PUSKESMAS-BARAT`: `10.32.238.0/24`, gateway `10.32.238.1`, DNS `10.32.239.2`
-* **R-PELABUHAN**:
-  * `POOL-SCADA-PELABUHAN`: `10.32.160.0/19`, gateway `10.32.160.1`, DNS `10.32.239.2`
-  * `POOL-KANTOR-PELABUHAN`: `10.32.240.0/25`, gateway `10.32.240.1`, DNS `10.32.239.2`
-* **R-PUSAT**:
-  * `POOL-PEGAWAI-BALAIKOTA`: `10.32.224.0/21`, gateway `10.32.224.1`, DNS `10.32.239.2`
+- **R-UTARA**:
+  - `POOL-WIFI-UTARA`: `10.32.0.0/18`, gateway `10.32.0.1`, DNS `10.32.239.2`
+  - `POOL-SENSOR-UTARA`: `10.32.236.0/23`, gateway `10.32.236.1`, DNS `10.32.239.2`
+- **R-SELATAN**:
+  - `POOL-WIFI-SELATAN`: `10.32.64.0/19`, gateway `10.32.64.1`, DNS `10.32.239.2`
+  - `POOL-PJU-SELATAN`: `10.32.240.128/25`, gateway `10.32.240.129`, DNS `10.32.239.2`
+- **R-TIMUR**:
+  - `POOL-WIFI-TIMUR`: `10.32.128.0/19`, gateway `10.32.128.1`, DNS `10.32.239.2`
+  - `POOL-SENSOR-TIMUR`: `10.32.232.0/22`, gateway `10.32.232.1`, DNS `10.32.239.2`
+- **R-BARAT**:
+  - `POOL-WIFI-BARAT`: `10.32.192.0/19`, gateway `10.32.192.1`, DNS `10.32.239.2`
+  - `POOL-PUSKESMAS-BARAT`: `10.32.238.0/24`, gateway `10.32.238.1`, DNS `10.32.239.2`
+- **R-PELABUHAN**:
+  - `POOL-SCADA-PELABUHAN`: `10.32.160.0/19`, gateway `10.32.160.1`, DNS `10.32.239.2`
+  - `POOL-KANTOR-PELABUHAN`: `10.32.240.0/25`, gateway `10.32.240.1`, DNS `10.32.239.2`
+- **R-PUSAT**:
+  - `POOL-PEGAWAI-BALAIKOTA`: `10.32.224.0/21`, gateway `10.32.224.1`, DNS `10.32.239.2`
 
 ---
 
@@ -426,6 +444,7 @@ Pada masing-masing router wilayah lain, pool DHCP diaktifkan untuk melayani LAN 
 Untuk mengamankan jaringan internal dan memungkinkan akses ke internet publik (`Server 8.8.8.8` di balik `R-ISP`), mekanisme **Port Address Translation (PAT / NAT Overload)** diterapkan pada `R-PUSAT`. Sesuai aturan soal, `R-ISP` sama sekali tidak memiliki rute ke blok IP privat internal (`10.32.0.0/16`).
 
 #### 5.1 Konfigurasi NAT Overload pada R-PUSAT
+
 ```
 R-PUSAT(config)# access-list 1 permit 10.32.0.0 0.0.255.255
 R-PUSAT(config)# access-list 1 permit 192.168.4.0 0.0.0.3
@@ -441,17 +460,19 @@ R-PUSAT(config-if-range)# exit
 ```
 
 #### 5.2 Pengujian NAT
+
 Pengujian ping dari host internal (`PC12` di Balai Kota, `PC0` di CCTV DC, dan `PC11` di Pelabuhan) ke `8.8.8.8` berhasil dengan 0% loss. Perintah `show ip nat translations` di `R-PUSAT` mengonfirmasi translasi IP privat ke IP publik `203.0.113.17`.
 
 ---
 
 ### 6. Konfigurasi Tunnel GRE (Generic Routing Encapsulation)
 
-Tunnel GRE dibangun secara *point-to-point* antara `R-PUSAT` dan `R-PELABUHAN` menggunakan blok pengalamatan `192.168.4.0/30` ($K=4$). Seluruh lalu lintas antar-subnet Balai Kota dan Pelabuhan diarahkan melewati tunnel ini.
+Tunnel GRE dibangun secara _point-to-point_ antara `R-PUSAT` dan `R-PELABUHAN` menggunakan blok pengalamatan `192.168.4.0/30` ($K=4$). Seluruh lalu lintas antar-subnet Balai Kota dan Pelabuhan diarahkan melewati tunnel ini.
 
 #### 6.1 Konfigurasi Tunnel Interface
 
 1. **R-PUSAT:**
+
    ```
    R-PUSAT(config)# interface Tunnel0
    R-PUSAT(config-if)# ip address 192.168.4.1 255.255.255.252
@@ -474,7 +495,9 @@ Tunnel GRE dibangun secara *point-to-point* antara `R-PUSAT` dan `R-PELABUHAN` m
    ```
 
 #### 6.2 Verifikasi Jalur Tunnel (Traceroute)
+
 Hasil pelacakan rute (`tracert 10.32.240.2`) dari `PC12` (Balai Kota) ke `PC11` (Kantor Pelabuhan):
+
 ```
 Tracing route to 10.32.240.2 over a maximum of 30 hops:
 
@@ -484,13 +507,15 @@ Tracing route to 10.32.240.2 over a maximum of 30 hops:
 
 Trace complete.
 ```
+
 Hop lompatan melewati `192.168.4.2` membuktikan bahwa paket dienkapsulasi GRE langsung ke Pelabuhan tanpa melalui hop routing IP `R-UTARA`.
 
 #### 6.3 Analisis & Pertimbangan Teknis
+
 1. **Alasan Pemilihan Jalur Tunnel oleh Router:**
-   Router memilih jalur tunnel karena tabel routing memiliki entri *static route* spesifik (`10.32.160.0/19` dan `10.32.240.0/25`) yang menunjuk ke *next-hop* `192.168.4.2` (`Tunnel0`). Berdasarkan prinsip *Longest Prefix Match* dan prioritas entri rute spesifik, rute melalui interface tunnel mengesampingkan rute default maupun rute umum lainnya.
+   Router memilih jalur tunnel karena tabel routing memiliki entri _static route_ spesifik (`10.32.160.0/19` dan `10.32.240.0/25`) yang menunjuk ke _next-hop_ `192.168.4.2` (`Tunnel0`). Berdasarkan prinsip _Longest Prefix Match_ dan prioritas entri rute spesifik, rute melalui interface tunnel mengesampingkan rute default maupun rute umum lainnya.
 2. **Mengapa GRE Saja Tidak Mengenkrpsi Data:**
-   Protokol GRE (IP Protocol 47) dirancang sebagai mekanisme enkapsulasi paket untuk membawa protokol layer 3 lain di atas jaringan IP. GRE hanya menambahkan header GRE (4 byte) dan IP header baru di luar paket asli tanpa menyertakan mekanisme kriptografi (tidak ada hashing integritas pesan, pertukaran kunci rahasia, maupun cipher enkripsi simetris seperti AES). Akibatnya, payload di dalam paket GRE tetap berupa *plaintext* dan dapat dibaca dengan sniffer jaringan. Untuk mengamankan data, GRE memerlukan protokol keamanan tambahan seperti IPsec (*GRE over IPsec*).
+   Protokol GRE (IP Protocol 47) dirancang sebagai mekanisme enkapsulasi paket untuk membawa protokol layer 3 lain di atas jaringan IP. GRE hanya menambahkan header GRE (4 byte) dan IP header baru di luar paket asli tanpa menyertakan mekanisme kriptografi (tidak ada hashing integritas pesan, pertukaran kunci rahasia, maupun cipher enkripsi simetris seperti AES). Akibatnya, payload di dalam paket GRE tetap berupa _plaintext_ dan dapat dibaca dengan sniffer jaringan. Untuk mengamankan data, GRE memerlukan protokol keamanan tambahan seperti IPsec (_GRE over IPsec_).
 
    ## 7. Verifikasi dan Finalisasi Perhitungan CIDR
 
@@ -498,76 +523,66 @@ Hop lompatan melewati `192.168.4.2` membuktikan bahwa paket dienkapsulasi GRE la
 
 Verifikasi dilakukan terhadap spreadsheet perhitungan VLSM dan CIDR Kelompok 4. Perhitungan menggunakan nomor kelompok (K = 4), sehingga nilai oktet kedua untuk blok privat diperoleh dari `8 × 4 = 32`.
 
-Terdapat dua rancangan pengalamatan yang perlu dibedakan. VLSM digunakan sebagai skema pengalamatan pada topologi utama Cisco Packet Tracer, sedangkan CIDR digunakan untuk menggabungkan beberapa blok jaringan menjadi blok yang lebih besar (*supernetting*) untuk kebutuhan agregasi rute.
+Terdapat dua rancangan pengalamatan yang perlu dibedakan. VLSM digunakan sebagai skema pengalamatan pada topologi utama Cisco Packet Tracer, sedangkan CIDR digunakan untuk menggabungkan beberapa blok jaringan menjadi blok yang lebih besar (_supernetting_) untuk kebutuhan agregasi rute.
 
-| Metode | Blok induk | Kegunaan |
-|---|---|---|
-| VLSM | `10.32.0.0/16` | Skema alamat yang digunakan pada topologi utama dan konfigurasi router. |
-| CIDR | `10.32.0.0/14` | Hasil agregasi beberapa blok jaringan berdasarkan kelompok router. Bukan pengganti alamat VLSM pada topologi utama. |
+| Metode | Blok induk     | Kegunaan                                                                                                            |
+| ------ | -------------- | ------------------------------------------------------------------------------------------------------------------- |
+| VLSM   | `10.32.0.0/16` | Skema alamat yang digunakan pada topologi utama dan konfigurasi router.                                             |
+| CIDR   | `10.32.0.0/14` | Hasil agregasi beberapa blok jaringan berdasarkan kelompok router. Bukan pengganti alamat VLSM pada topologi utama. |
 
-Sheet VLSM dan CIDR memuat 20 subnet, terdiri atas 14 LAN dan 6 link *point-to-point*. Berdasarkan rekap spreadsheet, jumlah kebutuhan host adalah 42.092 host dan total kebutuhan alamat setelah memperhitungkan alamat network, broadcast, gateway LAN, serta endpoint link adalah 42.146 alamat.
-
+Sheet VLSM dan CIDR memuat 20 subnet, terdiri atas 14 LAN dan 6 link _point-to-point_. Berdasarkan rekap spreadsheet, jumlah kebutuhan host adalah 42.092 host dan total kebutuhan alamat setelah memperhitungkan alamat network, broadcast, gateway LAN, serta endpoint link adalah 42.146 alamat.
 
 ![alt text](assets/07-01-pengamatan.png)
 
-
-
-
-
 ### 7.2 Hasil Verifikasi VLSM
 
-Pemeriksaan VLSM dilakukan terhadap kebutuhan host, ukuran blok, prefix, subnet mask, Network ID, rentang host yang dapat digunakan, alamat broadcast, dan kemungkinan tumpang tindih (*overlap*) antar-subnet.
+Pemeriksaan VLSM dilakukan terhadap kebutuhan host, ukuran blok, prefix, subnet mask, Network ID, rentang host yang dapat digunakan, alamat broadcast, dan kemungkinan tumpang tindih (_overlap_) antar-subnet.
 
 Berdasarkan rekap pemeriksaan yang tercantum pada spreadsheet revisi, 20 subnet memiliki ukuran blok yang mencukupi kebutuhan masing-masing. Network ID berada pada batas blok yang sesuai, rentang host dan alamat broadcast konsisten, serta tidak ditemukan subnet yang saling tumpang tindih.
 
-| Parameter pemeriksaan | Hasil rekap |
-|---|---:|
-| Jumlah subnet | 20 subnet (14 LAN dan 6 link) |
-| Total kebutuhan host | 42.092 |
-| Total kebutuhan alamat | 42.146 |
-| Total ukuran blok subnet individual | 61.752 alamat |
-| Subnet overlap | Tidak ditemukan pada hasil pemeriksaan spreadsheet |
-
+| Parameter pemeriksaan               |                                        Hasil rekap |
+| ----------------------------------- | -------------------------------------------------: |
+| Jumlah subnet                       |                      20 subnet (14 LAN dan 6 link) |
+| Total kebutuhan host                |                                             42.092 |
+| Total kebutuhan alamat              |                                             42.146 |
+| Total ukuran blok subnet individual |                                      61.752 alamat |
+| Subnet overlap                      | Tidak ditemukan pada hasil pemeriksaan spreadsheet |
 
 ![alt text](assets/07-02-verifikasi-vlsm.png)
 
-
-
 ### 7.3 Hasil Penggabungan CIDR per-Router
 
-Penggabungan CIDR dilakukan dengan mengelompokkan subnet berdasarkan router yang melayaninya. Hasil pohon *supernetting* pada rekap spreadsheet adalah sebagai berikut.
+Penggabungan CIDR dilakukan dengan mengelompokkan subnet berdasarkan router yang melayaninya. Hasil pohon _supernetting_ pada rekap spreadsheet adalah sebagai berikut.
 
-| Node / kelompok | Kebutuhan alamat | Ukuran blok | Prefix | Blok CIDR |
-|---|---:|---:|---:|---|
-| R-UTARA (lokal) | 16.900 | 32.768 | `/17` | `10.32.0.0/17` |
-| R-PELABUHAN | 8.324 | 16.384 | `/18` | `10.32.128.0/18` |
-| R-DC | 8.452 | 16.384 | `/18` | `10.33.0.0/18` |
-| R-BARAT | 8.452 | 16.384 | `/18` | `10.33.64.0/18` |
-| R-SELATAN | 8.324 | 16.384 | `/18` | `10.33.128.0/18` |
-| R-TIMUR | 9.220 | 16.384 | `/18` | `10.33.192.0/18` |
-| R-PUSAT (LAN lokal) | 2.080 | 4.096 | `/20` | `10.34.0.0/20` |
-| R-UTARA + R-PELABUHAN | 49.152 | 65.536 | `/16` | `10.32.0.0/16` |
-| R-PUSAT (root) | 135.168 | 262.144 | `/14` | `10.32.0.0/14` |
+| Node / kelompok       | Kebutuhan alamat | Ukuran blok | Prefix | Blok CIDR        |
+| --------------------- | ---------------: | ----------: | -----: | ---------------- |
+| R-UTARA (lokal)       |           16.900 |      32.768 |  `/17` | `10.32.0.0/17`   |
+| R-PELABUHAN           |            8.324 |      16.384 |  `/18` | `10.32.128.0/18` |
+| R-DC                  |            8.452 |      16.384 |  `/18` | `10.33.0.0/18`   |
+| R-BARAT               |            8.452 |      16.384 |  `/18` | `10.33.64.0/18`  |
+| R-SELATAN             |            8.324 |      16.384 |  `/18` | `10.33.128.0/18` |
+| R-TIMUR               |            9.220 |      16.384 |  `/18` | `10.33.192.0/18` |
+| R-PUSAT (LAN lokal)   |            2.080 |       4.096 |  `/20` | `10.34.0.0/20`   |
+| R-UTARA + R-PELABUHAN |           49.152 |      65.536 |  `/16` | `10.32.0.0/16`   |
+| R-PUSAT (root)        |          135.168 |     262.144 |  `/14` | `10.32.0.0/14`   |
 
-Blok gabungan akhir atau *root CIDR* adalah `10.32.0.0/14`, dengan rentang alamat `10.32.0.0` sampai `10.35.255.255`. Ukuran blok root tersebut adalah 262.144 alamat. Angka tersebut merupakan ukuran blok agregasi, bukan jumlah alamat yang digunakan oleh seluruh host.
+Blok gabungan akhir atau _root CIDR_ adalah `10.32.0.0/14`, dengan rentang alamat `10.32.0.0` sampai `10.35.255.255`. Ukuran blok root tersebut adalah 262.144 alamat. Angka tersebut merupakan ukuran blok agregasi, bukan jumlah alamat yang digunakan oleh seluruh host.
 
 assets/07-03-pohon-cidr.png
 
-
-
 ### 7.4 Kesimpulan Audit Spreadsheet
 
-| Parameter | Hasil |
-|---|---:|
-| Jumlah subnet | 20 subnet (14 LAN dan 6 link) |
-| Total host sesuai soal | 42.092 |
-| Total kebutuhan alamat | 42.146 |
-| Total ukuran blok subnet individual | 61.752 alamat |
-| Ukuran blok induk VLSM | 65.536 alamat (`/16`) |
-| Ukuran blok root CIDR | 262.144 alamat (`/14`) |
-| Efisiensi kebutuhan alamat terhadap blok induk VLSM | 64,31% |
-| Efisiensi kebutuhan alamat terhadap root CIDR | 16,08% |
-| Subnet overlap | Tidak ditemukan pada hasil pemeriksaan spreadsheet |
+| Parameter                                           |                                              Hasil |
+| --------------------------------------------------- | -------------------------------------------------: |
+| Jumlah subnet                                       |                      20 subnet (14 LAN dan 6 link) |
+| Total host sesuai soal                              |                                             42.092 |
+| Total kebutuhan alamat                              |                                             42.146 |
+| Total ukuran blok subnet individual                 |                                      61.752 alamat |
+| Ukuran blok induk VLSM                              |                              65.536 alamat (`/16`) |
+| Ukuran blok root CIDR                               |                             262.144 alamat (`/14`) |
+| Efisiensi kebutuhan alamat terhadap blok induk VLSM |                                             64,31% |
+| Efisiensi kebutuhan alamat terhadap root CIDR       |                                             16,08% |
+| Subnet overlap                                      | Tidak ditemukan pada hasil pemeriksaan spreadsheet |
 
 Dengan demikian, blok VLSM `10.32.0.0/16` tetap menjadi acuan pengalamatan pada topologi utama Cisco Packet Tracer. Hasil CIDR `10.32.0.0/14` merupakan rancangan agregasi yang terpisah. Kedua hasil tersebut memiliki fungsi berbeda dan tidak boleh dicampur sebagai satu skema pengalamatan pada konfigurasi perangkat.
 
@@ -579,26 +594,23 @@ Dengan demikian, blok VLSM `10.32.0.0/16` tetap menjadi acuan pengalamatan pada 
 
 Layanan aplikasi ditempatkan pada **Server-DC** di jaringan Server dan Storage Data Center (R-DC). Pengalamatan server menggunakan konfigurasi statis berikut.
 
-| Parameter | Nilai |
-|---|---|
-| Nama perangkat | Server-DC |
-| Network | `10.32.239.0/24` |
-| IP Address | `10.32.239.2` |
-| Subnet Mask | `255.255.255.0` |
-| Default Gateway | `10.32.239.1` |
-| DNS Server | `10.32.239.2` |
-
-
+| Parameter       | Nilai            |
+| --------------- | ---------------- |
+| Nama perangkat  | Server-DC        |
+| Network         | `10.32.239.0/24` |
+| IP Address      | `10.32.239.2`    |
+| Subnet Mask     | `255.255.255.0`  |
+| Default Gateway | `10.32.239.1`    |
+| DNS Server      | `10.32.239.2`    |
 
 assets/08-01-ip-server-dc.png
 
-
-
 ### 8.2 Konfigurasi dan Pengujian DNS
 
-DNS (*Domain Name System*) menerjemahkan nama domain menjadi alamat IP sehingga klien dapat mengakses layanan menggunakan nama host atau domain.
+DNS (_Domain Name System_) menerjemahkan nama domain menjadi alamat IP sehingga klien dapat mengakses layanan menggunakan nama host atau domain.
 
 **Langkah konfigurasi pada Server-DC:**
+
 1. Klik **Server-DC** → tab **Services** → **DNS**.
 2. Ubah layanan DNS menjadi **On**.
 3. Pada bagian penambahan record, isi **Name** dengan nama domain yang benar-benar digunakan pada simulasi.
@@ -606,11 +618,12 @@ DNS (*Domain Name System*) menerjemahkan nama domain menjadi alamat IP sehingga 
 5. Isi **Address** dengan `10.32.239.2`, kemudian klik **Add**.
 6. Pastikan record muncul pada daftar DNS.
 
-| Jenis record | Nama | Alamat tujuan |
-|---|---|---|
-| A Record | `[domain DNS yang digunakan]` | `10.32.239.2` |
+| Jenis record | Nama                          | Alamat tujuan |
+| ------------ | ----------------------------- | ------------- |
+| A Record     | `[domain DNS yang digunakan]` | `10.32.239.2` |
 
 **Pengujian dari PC klien:**
+
 1. Pilih salah satu PC klien yang sudah memperoleh DNS Server `10.32.239.2`.
 2. Buka **Desktop** → **Command Prompt**.
 3. Jalankan perintah berikut. Ganti teks dalam tanda kurung siku dengan domain yang dibuat pada DNS Server.
@@ -621,48 +634,35 @@ ping [domain DNS yang digunakan]
 
 Jika DNS berfungsi, baris awal hasil ping akan menampilkan nama domain yang diarahkan ke alamat `10.32.239.2`. Pastikan juga PC klien menggunakan DNS Server `10.32.239.2` pada **Desktop → IP Configuration**.
 
-
-
 assets/08-02a-dns-server.png
 
-
-
-
-
 assets/08-02b-dns-client.png
-
-
 
 ### 8.3 Konfigurasi dan Pengujian Web Smart City
 
 Layanan Web Smart City menyediakan halaman informasi berbasis web yang dapat diakses oleh PC klien melalui browser.
 
 **Langkah konfigurasi pada Server-DC:**
+
 1. Klik **Server-DC** → tab **Services** → **HTTP**.
 2. Pastikan layanan **HTTP** dalam keadaan **On**. Aktifkan HTTPS hanya jika memang digunakan pada simulasi.
 3. Jika halaman web menggunakan halaman bawaan, pastikan file `index.html` tersedia. Jika halaman telah diedit, simpan perubahan tersebut.
 
 **Pengujian dari PC klien:**
+
 1. Pilih PC klien yang terhubung ke jaringan.
 2. Buka **Desktop** → **Web Browser**.
 3. Masukkan URL menggunakan domain DNS yang sudah dibuat, misalnya `http://[domain DNS yang digunakan]`.
 4. Tekan **Go** dan pastikan halaman Web Smart City tampil.
 
-
-
-
 ![alt text](<assets/08-02c-tes web .png>)
-
-
-
-
-
 
 ### 8.4 Konfigurasi dan Pengujian FTP CCTV
 
-FTP (*File Transfer Protocol*) digunakan untuk mengunggah dan mengunduh berkas pada server. Pada simulasi ini, FTP digunakan untuk kebutuhan transfer berkas CCTV.
+FTP (_File Transfer Protocol_) digunakan untuk mengunggah dan mengunduh berkas pada server. Pada simulasi ini, FTP digunakan untuk kebutuhan transfer berkas CCTV.
 
 **Langkah konfigurasi pada Server-DC:**
+
 1. Klik **Server-DC** → tab **Services** → **FTP**.
 2. Ubah layanan FTP menjadi **On**.
 3. Tambahkan akun pengguna FTP sesuai akun yang digunakan kelompok.
@@ -670,6 +670,7 @@ FTP (*File Transfer Protocol*) digunakan untuk mengunggah dan mengunduh berkas p
 5. Klik **Add** atau simpan akun sesuai tampilan Packet Tracer.
 
 **Pengujian upload dari PC klien:**
+
 1. Pada PC klien, buka **Desktop** → **Command Prompt**.
 2. Jalankan perintah koneksi berikut:
 
@@ -691,8 +692,6 @@ bye
 
 assets/09-02d-config ftp.png
 
-
-
 assets/08-02e-berhasil ftp nya.png
 
 ### 8.5 Konfigurasi dan Pengujian Email
@@ -700,6 +699,7 @@ assets/08-02e-berhasil ftp nya.png
 Layanan Email memungkinkan pengguna jaringan mengirim dan menerima pesan elektronik melalui protokol SMTP dan POP3.
 
 **Langkah konfigurasi pada Server-DC:**
+
 1. Klik **Server-DC** → tab **Services** → **EMAIL**.
 2. Aktifkan layanan **SMTP** dan **POP3**.
 3. Isi domain email sesuai domain yang dipakai pada simulasi, kemudian klik **Set**.
@@ -709,6 +709,7 @@ Layanan Email memungkinkan pengguna jaringan mengirim dan menerima pesan elektro
 **Catatan akun:** pada percobaan sebelumnya, alamat `pegawai@gmail.com` digunakan sebagai alamat pegawai. Jika alamat tersebut tetap menjadi akun final, domain pada server harus `gmail.com` dan username yang dimasukkan pada daftar akun server adalah `pegawai` (tanpa `@gmail.com`). Pada konfigurasi Email di PC, gunakan alamat lengkap `pegawai@gmail.com`.
 
 **Langkah konfigurasi Email pada PC klien:**
+
 1. Klik PC pengirim → **Desktop** → **Email**.
 2. Isi Display Name, alamat email lengkap, Incoming Mail Server, Outgoing Mail Server, username, dan password.
 3. Untuk server masuk dan keluar, gunakan alamat Server-DC `10.32.239.2` jika layanan SMTP/POP3 memang berjalan pada Server-DC.
@@ -716,6 +717,7 @@ Layanan Email memungkinkan pengguna jaringan mengirim dan menerima pesan elektro
 5. Lakukan konfigurasi yang sama pada PC penerima menggunakan akun penerima yang terdaftar.
 
 **Pengujian kirim dan terima:**
+
 1. Dari PC pengirim, buat email baru.
 2. Isi alamat penerima dengan alamat email lengkap yang sudah dibuat pada Server-DC.
 3. Isi subject dan pesan uji, kemudian klik **Send**.
@@ -723,32 +725,25 @@ Layanan Email memungkinkan pengguna jaringan mengirim dan menerima pesan elektro
 5. Pastikan pesan muncul pada Inbox penerima.
 
 **Cara mengambil screenshot:**
+
 - Screenshot pertama: Server-DC → Services → EMAIL, SMTP/POP3 aktif, domain, dan daftar akun terlihat.
 - Screenshot kedua: PC pengirim yang menunjukkan email berhasil dikirim atau berada pada daftar pesan terkirim.
 - Screenshot ketiga: PC penerima setelah menekan **Receive**, dengan pesan uji terlihat pada Inbox.
 
 ![alt text](<assets/config email.png>)
 
-
-
 ![alt text](<assets/tes kirim email.png>)
-
-
-
 
 assets/berhasil menerima email.png
 
-
-
-
 ### 8.6 Rekapitulasi Layanan Aplikasi
 
-| Layanan | Fungsi | Status pekerjaan |
-|---|---|---|
-| DNS | Menerjemahkan nama domain menjadi alamat IP. | Sudah dikonfigurasi; lampirkan bukti record dan pengujian resolusi nama. |
-| Web Smart City | Menyediakan halaman informasi berbasis web. | Sudah dikonfigurasi; lampirkan bukti akses dari browser klien. |
-| FTP CCTV | Mengunggah dan mengunduh berkas CCTV. | Pengujian upload telah dilaporkan berhasil; lampirkan bukti `put` dan daftar file. |
-| Email | Mengirim dan menerima pesan elektronik. | Pengujian kirim dan terima telah dilaporkan berhasil; lampirkan bukti Sent dan Inbox. |
+| Layanan        | Fungsi                                       | Status pekerjaan                                                                      |
+| -------------- | -------------------------------------------- | ------------------------------------------------------------------------------------- |
+| DNS            | Menerjemahkan nama domain menjadi alamat IP. | Sudah dikonfigurasi; lampirkan bukti record dan pengujian resolusi nama.              |
+| Web Smart City | Menyediakan halaman informasi berbasis web.  | Sudah dikonfigurasi; lampirkan bukti akses dari browser klien.                        |
+| FTP CCTV       | Mengunggah dan mengunduh berkas CCTV.        | Pengujian upload telah dilaporkan berhasil; lampirkan bukti `put` dan daftar file.    |
+| Email          | Mengirim dan menerima pesan elektronik.      | Pengujian kirim dan terima telah dilaporkan berhasil; lampirkan bukti Sent dan Inbox. |
 
 ---
 
@@ -756,11 +751,11 @@ assets/berhasil menerima email.png
 
 ### 9.1 Tujuan dan File Simulasi
 
-Konfigurasi OSPF dibuat pada file salinan khusus agar file utama yang menggunakan *static routing* tetap terjaga. Karena topologi utama menggunakan blok VLSM `10.32.0.0/16`, file salinan OSPF menggunakan nama:
+Konfigurasi OSPF dibuat pada file salinan khusus agar file utama yang menggunakan _static routing_ tetap terjaga. Karena topologi utama menggunakan blok VLSM `10.32.0.0/16`, file salinan OSPF menggunakan nama:
 
 `K4_VLSM_OSPF.pkt`
 
-OSPF (*Open Shortest Path First*) memungkinkan router bertukar informasi rute secara dinamis. Saat jalur yang sedang digunakan mengalami gangguan, router dapat memilih jalur alternatif berdasarkan informasi routing dan nilai cost.
+OSPF (_Open Shortest Path First_) memungkinkan router bertukar informasi rute secara dinamis. Saat jalur yang sedang digunakan mengalami gangguan, router dapat memilih jalur alternatif berdasarkan informasi routing dan nilai cost.
 
 **Penting:** jangan melakukan pengujian `shutdown` pada file utama. Lakukan seluruh perubahan dan pengujian pada `K4_VLSM_OSPF.pkt`.
 
@@ -768,11 +763,11 @@ OSPF (*Open Shortest Path First*) memungkinkan router bertukar informasi rute se
 
 Informasi link yang tercatat pada topologi utama adalah sebagai berikut.
 
-| Link | Perangkat/interface | Alamat IP | Network |
-|---|---|---|---|
-| L2 | R-PUSAT ↔ R-UTARA | R-PUSAT `10.32.241.37`; R-UTARA `10.32.241.38` | `10.32.241.36/30` |
+| Link                   | Perangkat/interface   | Alamat IP                                          | Network           |
+| ---------------------- | --------------------- | -------------------------------------------------- | ----------------- |
+| L2                     | R-PUSAT ↔ R-UTARA     | R-PUSAT `10.32.241.37`; R-UTARA `10.32.241.38`     | `10.32.241.36/30` |
 | L6 pada topologi utama | R-UTARA ↔ R-PELABUHAN | R-UTARA `10.32.241.53`; R-PELABUHAN `10.32.241.54` | `10.32.241.52/30` |
-| GRE Tunnel0 | R-PUSAT ↔ R-PELABUHAN | R-PUSAT `192.168.4.1`; R-PELABUHAN `192.168.4.2` | `192.168.4.0/30` |
+| GRE Tunnel0            | R-PUSAT ↔ R-PELABUHAN | R-PUSAT `192.168.4.1`; R-PELABUHAN `192.168.4.2`   | `192.168.4.0/30`  |
 
 GRE Tunnel0 menggunakan sumber jaringan R-PUSAT `10.32.241.37` dan tujuan `10.32.241.54`. Pada pengujian OSPF, R-PUSAT pernah menampilkan neighbor R-PELABUHAN melalui `192.168.4.2` pada interface Tunnel0, serta neighbor R-UTARA melalui `10.32.241.38`.
 
@@ -789,34 +784,24 @@ show cdp neighbors detail
 
 assets/topologi ospf.png
 
-
-
 ![alt text](<assets/cli r pusat.png>)
 
-
-
 ![alt text](<assets/cli r pusat.png>)
-
-
 
 ![alt text](<assets/cli r utara.png>)
 
-
-
 ![alt text](<assets/cli r pelabuhan.png>)
-
-
 
 ### 9.3 Konfigurasi dan Verifikasi OSPF
 
 Parameter OSPF yang digunakan pada simulasi adalah:
 
-| Parameter | Nilai |
-|---|---|
-| Routing protocol | OSPF |
-| Process ID | `1` |
-| Area | `0` |
-| Cost interface yang pernah dilaporkan | `1` |
+| Parameter                             | Nilai |
+| ------------------------------------- | ----- |
+| Routing protocol                      | OSPF  |
+| Process ID                            | `1`   |
+| Area                                  | `0`   |
+| Cost interface yang pernah dilaporkan | `1`   |
 
 **Contoh konfigurasi pada router internal:** jalankan pada CLI setiap router internal yang ikut dalam OSPF, yaitu R-PUSAT, R-DC, R-UTARA, R-PELABUHAN, R-BARAT, R-TIMUR, dan R-SELATAN. Perintah `network` berikut mengaktifkan OSPF pada interface yang alamatnya berada di blok `10.32.0.0/16`.
 
@@ -831,21 +816,15 @@ write memory
 
 ![alt text](assets/1.png)
 
-
 ![alt text](assets/2.png)
-
 
 ![alt text](assets/3.png)
 
-
 ![alt text](assets/4.png)
-
 
 ![alt text](assets/5.png)
 
-
 ![alt text](assets/6.png)
-
 
 **Tambahan pada R-PUSAT dan R-PELABUHAN:** karena Tunnel0 menggunakan jaringan `192.168.4.0/30`, tambahkan network statement berikut pada kedua router tersebut apabila belum ada.
 
@@ -857,7 +836,7 @@ end
 write memory
 ```
 
-Jangan mengulang konfigurasi jika network statement tersebut sudah ada. Untuk memastikan OSPF benar-benar digunakan, periksa apakah masih ada *static route* ke subnet yang sama. Pada file OSPF, rute statis yang memiliki tujuan dan prefix sama dapat lebih diprioritaskan daripada rute OSPF. Periksa terlebih dahulu dengan:
+Jangan mengulang konfigurasi jika network statement tersebut sudah ada. Untuk memastikan OSPF benar-benar digunakan, periksa apakah masih ada _static route_ ke subnet yang sama. Pada file OSPF, rute statis yang memiliki tujuan dan prefix sama dapat lebih diprioritaskan daripada rute OSPF. Periksa terlebih dahulu dengan:
 
 ```text
 show running-config | include ip route
@@ -877,6 +856,7 @@ show ip route 10.32.240.0
 ```
 
 Keterangan:
+
 - `show ip interface brief` menampilkan status interface dan alamat IP.
 - `show ip ospf neighbor` menampilkan router tetangga dan status adjacency. Status **FULL** menunjukkan adjacency telah terbentuk.
 - `show ip route ospf` menampilkan rute yang dipelajari melalui OSPF, ditandai kode `O`.
@@ -886,13 +866,12 @@ Pada pengujian sebelumnya, R-PUSAT menampilkan enam neighbor OSPF berstatus **FU
 
 assets/verif cli r pusat.png
 
-
-
 ### 9.4 Pengujian Failover
 
 Pengujian dilakukan untuk memastikan komunikasi ke jaringan Pelabuhan tetap memiliki jalur ketika Tunnel0 dinonaktifkan. Pengujian ini dilakukan pada file salinan OSPF.
 
 **Perangkat uji:**
+
 - PC sumber: PC Pegawai Balai Kota, IP `10.32.224.2`.
 - PC tujuan: PC SCADA Pelabuhan, IP `10.32.160.2`.
 - Router yang diperiksa: R-PUSAT.
@@ -949,12 +928,7 @@ Pada PC Pegawai Balai Kota, jalankan kembali:
 ping 10.32.160.2
 ```
 
-
 ![alt text](<assets/ping pegawai balai kota .png>)
-
-
-
-
 
 **D. Pulihkan Tunnel0**
 
@@ -977,10 +951,7 @@ show ip route 10.32.160.0
 show ip route 10.32.240.0
 ```
 
-
 ![alt text](assets/memulihkan.png)
-
-
 
 Untuk menguji konektivitas tunnel setelah dipulihkan, dari CLI R-PELABUHAN jalankan:
 
@@ -988,18 +959,16 @@ Untuk menguji konektivitas tunnel setelah dipulihkan, dari CLI R-PELABUHAN jalan
 ping 192.168.4.1
 ```
 
-
 ![alt text](<assets/ping pelabuhan.png>)
 
-
-Pada pengujian sebelumnya, Tunnel0 kembali berstatus `up/up` dan neighbor R-PELABUHAN kembali **FULL**. Ping dari R-PELABUHAN ke `192.168.4.1` juga pernah dilaporkan berhasil 5/5. Namun, tabel routing masih menunjukkan jalur melalui `10.32.241.38` dengan metric `3`, bukan melalui GRE Tunnel0. Oleh karena itu, status pulihnya interface, neighbor, dan konektivitas alamat tunnel sudah tercatat, tetapi perpindahan rute kembali ke Tunnel0 (*failback*) belum dapat dinyatakan berhasil sebelum tabel routing menunjukkan jalur tersebut.
-
+Pada pengujian sebelumnya, Tunnel0 kembali berstatus `up/up` dan neighbor R-PELABUHAN kembali **FULL**. Ping dari R-PELABUHAN ke `192.168.4.1` juga pernah dilaporkan berhasil 5/5. Namun, tabel routing masih menunjukkan jalur melalui `10.32.241.38` dengan metric `3`, bukan melalui GRE Tunnel0. Oleh karena itu, status pulihnya interface, neighbor, dan konektivitas alamat tunnel sudah tercatat, tetapi perpindahan rute kembali ke Tunnel0 (_failback_) belum dapat dinyatakan berhasil sebelum tabel routing menunjukkan jalur tersebut.
 
 ### 9.5 Analisis Hasil OSPF dan Failover
 
 Hasil verifikasi menunjukkan bahwa OSPF telah membentuk adjacency antara R-PUSAT dan router-router internal. Pada pengujian gangguan, Tunnel0 dinonaktifkan melalui perintah `shutdown`. Setelah proses konvergensi, rute menuju subnet Pelabuhan berubah ke next-hop `10.32.241.38` dengan metric `3`, yaitu jalur melalui R-UTARA. Perubahan rute tersebut membuktikan bahwa OSPF dapat memilih jalur alternatif ketika jalur Tunnel0 tidak tersedia.
 
 Terdapat dua hal yang harus dibedakan dalam pelaporan:
+
 1. **Failover:** perpindahan rute dari Tunnel0 ke jalur melalui R-UTARA setelah Tunnel0 dinonaktifkan telah tercatat pada output `show ip route`.
 2. **Failback:** setelah Tunnel0 diaktifkan kembali, neighbor kembali FULL, tetapi rute yang tercatat masih melalui `10.32.241.38`. Karena itu, perpindahan rute kembali ke Tunnel0 belum terbukti pada pengujian tersebut.
 
@@ -1009,9 +978,9 @@ Untuk penamaan link, tabel topologi utama mencatat koneksi R-UTARA `10.32.241.53
 
 ## 10. Kesimpulan Pekerjaan Anggota 3
 
-Pekerjaan Anggota 3 mencakup verifikasi dan finalisasi perhitungan CIDR, konfigurasi layanan aplikasi pada Server-DC, serta konfigurasi dan pengujian *dynamic routing* OSPF pada file salinan.
+Pekerjaan Anggota 3 mencakup verifikasi dan finalisasi perhitungan CIDR, konfigurasi layanan aplikasi pada Server-DC, serta konfigurasi dan pengujian _dynamic routing_ OSPF pada file salinan.
 
-Pada bagian pengalamatan, blok VLSM `10.32.0.0/16` tetap digunakan sebagai acuan topologi utama, sedangkan root CIDR `10.32.0.0/14` merupakan hasil agregasi subnet. Rekap spreadsheet mencakup 20 subnet yang terdiri atas 14 LAN dan 6 link *point-to-point*. Hasil pemeriksaan spreadsheet yang tercatat menunjukkan tidak ditemukan subnet yang saling tumpang tindih.
+Pada bagian pengalamatan, blok VLSM `10.32.0.0/16` tetap digunakan sebagai acuan topologi utama, sedangkan root CIDR `10.32.0.0/14` merupakan hasil agregasi subnet. Rekap spreadsheet mencakup 20 subnet yang terdiri atas 14 LAN dan 6 link _point-to-point_. Hasil pemeriksaan spreadsheet yang tercatat menunjukkan tidak ditemukan subnet yang saling tumpang tindih.
 
 Pada bagian server aplikasi, Server-DC menggunakan alamat `10.32.239.2/24` dengan gateway `10.32.239.1`. Layanan yang ditangani meliputi DNS, Web Smart City, FTP CCTV, dan Email. DNS dan Web Smart City telah dikonfigurasi. Pengujian upload FTP serta pengiriman dan penerimaan Email telah dilaporkan berhasil. Bukti konfigurasi dan hasil pengujian dilampirkan pada bagian 8.
 
